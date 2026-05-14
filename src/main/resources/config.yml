@@ -1,0 +1,22 @@
+# AdvancedChat Configuration
+#
+# Placeholders:
+# %player% = the player's name
+# %displayname% = the player's display name
+# %message% = the chat message
+# %world% = the world name of the player's current world
+# %server% = the server name (configurable below)
+#
+# PlaceholderAPI placeholders are also supported (e.g. %player_health%, %vault_prefix%)
+#
+# MiniMessage formatting is supported in the chat format
+# Examples: <green>, <bold>, <gradient:red:blue>, <hover:show_text:'hello'>
+# See https://docs.advntr.dev/minimessage/format.html
+#
+# To reload: /advchat reload or /advancedchat reload
+# Permission: advchat.reload
+
+chat-format: "%player%: %message%"
+
+# Server name used for the %server% placeholder
+server-name: "server"

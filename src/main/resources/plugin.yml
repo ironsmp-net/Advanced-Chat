@@ -1,0 +1,28 @@
+name: AdvancedChat
+version: '${version}'
+
+main: org.ramki.advancedChat.AdvancedChat
+api-version: '26.1.2'
+load: POSTWORLD
+folia-supported: true
+
+authors: [ ue_rami ]
+
+softdepend: [ PlaceholderAPI ]
+
+commands:
+  advchat:
+    description: AdvancedChat commands
+    usage: /advchat <reload>
+    aliases: [ advancedchat ]
+
+permissions:
+  advchat.reload:
+    description: Allows use of /advchat reload
+    default: op
+  advchat.minimessage:
+    description: Allows MiniMessage formatting in chat messages
+    default: false
+  advchat.colorcodes:
+    description: Allows legacy color codes in chat messages
+    default: false
