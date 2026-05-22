@@ -18,5 +18,22 @@
 
 chat-format: "%player%: %message%"
 
-# Server name used for the %server% placeholder
+# Server name used for the %server% placeholder.
+# When database sync is enabled this also identifies this server in the shared chat table,
+# so EVERY server in the network MUST have a unique server-name.
 server-name: "server"
+
+cooldown:
+  enabled: true
+  seconds: 1.5
+  message: "<dark_red>⚠ <dark_grey>You must wait %number% seconds before chatting again."
+
+database:
+  enabled: false
+  host: "127.0.0.1"
+  port: 3306
+  database: "advancedchat"
+  username: ""
+  password: ""
+  table: "advchat_messages"
+  poll-interval-ticks: 10

@@ -2,13 +2,17 @@ name: AdvancedChat
 version: '${version}'
 
 main: org.ramki.advancedChat.AdvancedChat
-api-version: '26.1.2'
+api-version: '1.21'
 load: POSTWORLD
 folia-supported: true
 
 authors: [ ue_rami ]
 
 softdepend: [ PlaceholderAPI ]
+
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - org.mariadb.jdbc:mariadb-java-client:3.5.1
 
 commands:
   advchat:
@@ -25,4 +29,7 @@ permissions:
     default: false
   advchat.colorcodes:
     description: Allows legacy color codes in chat messages
+    default: false
+  advchat.bypasscooldown:
+    description: Allows bypassing the chat cooldown
     default: false
