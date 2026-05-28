@@ -5,8 +5,10 @@ import org.bukkit.configuration.file.FileConfiguration;
 public record ChatPluginSettings(
         String chatFormat,
         String serverName,
+        boolean chatSync,
         CooldownSection cooldown,
-        DatabaseSection database
+        DatabaseSection database,
+        MuteSection mute
 ) {
     public record CooldownSection(boolean enabled, double seconds, String message) {
         public long millis() {
@@ -22,7 +24,13 @@ public record ChatPluginSettings(
             String username,
             String password,
             String table,
+            String muteTable,
             long pollIntervalTicks
+    ) {}
+
+    public record MuteSection(
+            String chatBlockedMessage,
+            long syncIntervalTicks
     ) {}
 
     public static ChatPluginSettings load(FileConfiguration config) {
@@ -41,14 +49,23 @@ public record ChatPluginSettings(
                 config.getString("database.username", "root"),
                 config.getString("database.password", ""),
                 config.getString("database.table", "advchat_messages"),
+                config.getString("database.mute-table", "advchat_mutes"),
                 config.getLong("database.poll-interval-ticks", 10L)
+        );
+
+        MuteSection mute = new MuteSection(
+                config.getString("mute.chat-blocked-message",
+                        "<red>You are muted (%days% Days, %hours% Hours, %minutes% Minutes)!\n<red>Reason: <yellow>(%reason%)"),
+                config.getLong("mute.sync-interval-ticks", 20L)
         );
 
         return new ChatPluginSettings(
                 config.getString("chat-format", "%player%: %message%"),
                 config.getString("server-name", "server"),
+                config.getBoolean("chat-sync", true),
                 cooldown,
-                database
+                database,
+                mute
         );
     }
 }

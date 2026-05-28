@@ -29,6 +29,12 @@ public final class ChatRelayTask {
     public void start() {
         long interval = Math.max(1L, this.plugin.getSettings().database().pollIntervalTicks());
         this.pollTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this.plugin, () -> {
+            if (!this.plugin.getSettings().chatSync()) {
+                long maxId = this.database.currentMaxId();
+                if (maxId > this.lastSeenId.get()) this.lastSeenId.set(maxId);
+                return;
+            }
+
             List<ChatDatabase.StoredMessage> messages = this.database.pollSince(this.lastSeenId.get());
             if (messages.isEmpty()) return;
 

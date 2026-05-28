@@ -4,14 +4,21 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.ramki.advancedChat.command.MuteCommand;
 import org.ramki.advancedChat.config.ChatPluginSettings;
+import org.ramki.advancedChat.mute.MuteRecord;
 import org.ramki.advancedChat.service.CooldownService;
+import org.ramki.advancedChat.service.MuteService;
 import org.ramki.advancedChat.storage.ChatDatabase;
+import org.ramki.advancedChat.storage.MuteRepository;
 import org.ramki.advancedChat.task.ChatRelayTask;
+import org.ramki.advancedChat.task.MuteSyncTask;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,9 +31,11 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
     private boolean papiEnabled;
 
     private CooldownService cooldownService;
+    private MuteService muteService;
     private ExecutorService executor;
     private ChatDatabase database;
     private ChatRelayTask relayTask;
+    private MuteSyncTask muteSyncTask;
 
     @Override
     public void onEnable() {
@@ -43,11 +52,41 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
         this.cooldownService = new CooldownService(this);
         startDatabase();
 
+        MuteRepository muteRepository = this.database != null ? this.database.getMuteRepository() : null;
+        this.muteService = new MuteService(muteRepository);
+        if (muteRepository != null) {
+            primeMuteCache(muteRepository);
+            this.muteSyncTask = new MuteSyncTask(this, muteRepository, this.muteService);
+            this.muteSyncTask.start(this.settings.mute().syncIntervalTicks());
+        }
+
         getServer().getPluginManager().registerEvents(
-                new ChatListener(this, this.cooldownService, this::getDatabase), this);
+                new ChatListener(this, this.cooldownService, this.muteService, this::getDatabase), this);
 
         getCommand("advchat").setExecutor(this);
         getCommand("advchat").setTabCompleter(this);
+
+        MuteCommand muteCommand = new MuteCommand(this, this.muteService);
+        if (getCommand("mute") != null) {
+            getCommand("mute").setExecutor(muteCommand);
+            getCommand("mute").setTabCompleter(muteCommand);
+        }
+        if (getCommand("unmute") != null) {
+            getCommand("unmute").setExecutor(muteCommand);
+            getCommand("unmute").setTabCompleter(muteCommand);
+        }
+    }
+
+    private void primeMuteCache(MuteRepository repository) {
+        try {
+            long now = System.currentTimeMillis();
+            List<MuteRecord> initial = repository.loadAllActive(now);
+            ConcurrentHashMap<UUID, MuteRecord> map = new ConcurrentHashMap<>(Math.max(16, initial.size() * 2));
+            for (MuteRecord r : initial) map.put(r.uuid(), r);
+            this.muteService.replaceCache(map);
+        } catch (Exception ex) {
+            getLogger().log(Level.WARNING, "Failed to prime mute cache from database", ex);
+        }
     }
 
     @Override
@@ -55,6 +94,11 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
         if (this.relayTask != null) {
             this.relayTask.stop();
             this.relayTask = null;
+        }
+
+        if (this.muteSyncTask != null) {
+            this.muteSyncTask.stop();
+            this.muteSyncTask = null;
         }
 
         if (this.executor != null) {
@@ -75,6 +119,10 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
         if (this.database != null) {
             this.database.shutdown();
             this.database = null;
+        }
+
+        if (this.muteService != null) {
+            this.muteService.clear();
         }
 
         if (this.cooldownService != null) {

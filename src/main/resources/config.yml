@@ -23,10 +23,22 @@ chat-format: "%player%: %message%"
 # so EVERY server in the network MUST have a unique server-name.
 server-name: "server"
 
+# When true, this server publishes chat messages to the shared database and reads incoming
+# messages from other servers (that also have chat-sync: true).
+# When false, this server does not send its chat to the network and does not see chat from
+# other servers. Mute sync still works independently of this toggle.
+chat-sync: true
+
 cooldown:
   enabled: true
   seconds: 1.5
   message: "<dark_red>⚠ <dark_grey>You must wait %number% seconds before chatting again."
+
+# Shown to a muted player when they try to chat. Placeholders:
+# %days%, %hours%, %minutes%, %reason%, %muter%, %player%
+mute:
+  chat-blocked-message: "<red>You are muted (%days% Days, %hours% Hours, %minutes% Minutes)!\n<red>Reason: <yellow>(%reason%)"
+  sync-interval-ticks: 20
 
 database:
   enabled: false
@@ -36,4 +48,5 @@ database:
   username: ""
   password: ""
   table: "advchat_messages"
+  mute-table: "advchat_mutes"
   poll-interval-ticks: 10

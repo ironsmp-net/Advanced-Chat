@@ -32,6 +32,7 @@ public final class ChatDatabase {
     private final ExecutorService executor;
     private final Logger logger;
     private final String table;
+    private final MuteRepository muteRepository;
 
     public ChatDatabase(AdvancedChat plugin, ExecutorService executor, Logger logger) {
         this.plugin = plugin;
@@ -60,6 +61,17 @@ public final class ChatDatabase {
             this.dataSource.close();
             throw new IllegalStateException("Failed to create chat sync table", ex);
         }
+
+        try {
+            this.muteRepository = new MuteRepository(this.dataSource, this.executor, this.logger, db.muteTable());
+        } catch (RuntimeException ex) {
+            this.dataSource.close();
+            throw ex;
+        }
+    }
+
+    public MuteRepository getMuteRepository() {
+        return this.muteRepository;
     }
 
     private void initSchema() throws SQLException {
