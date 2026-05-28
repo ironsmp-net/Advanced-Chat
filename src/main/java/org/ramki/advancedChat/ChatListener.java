@@ -16,6 +16,7 @@ import org.ramki.advancedChat.mute.MuteRecord;
 import org.ramki.advancedChat.service.CooldownService;
 import org.ramki.advancedChat.service.MuteService;
 import org.ramki.advancedChat.storage.ChatDatabase;
+import net.kyori.adventure.audience.Audience;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -94,7 +95,11 @@ public final class ChatListener implements Listener {
         format = format.replace("%message%", processedMessage);
 
         Component rendered = this.miniMessage.deserialize(format);
-        event.renderer((source, sourceDisplayName, message, audience) -> rendered);
+
+        event.setCancelled(true);
+        for (Audience viewer : event.viewers()) {
+            viewer.sendMessage(rendered);
+        }
 
         if (settings.chatSync()) {
             ChatDatabase database = this.databaseSupplier.get();
