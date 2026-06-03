@@ -32,7 +32,7 @@ public final class ChatDatabase {
     private final ExecutorService executor;
     private final Logger logger;
     private final String table;
-    private final MuteRepository muteRepository;
+    private final org.ramki.advancedChat.storage.MuteRepository muteRepository;
 
     public ChatDatabase(AdvancedChat plugin, ExecutorService executor, Logger logger) {
         this.plugin = plugin;
@@ -42,6 +42,7 @@ public final class ChatDatabase {
         this.table = db.table();
 
         HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setDriverClassName("org.ramki.advancedChat.libs.mariadb.Driver");
         hikariConfig.setJdbcUrl(String.format(
                 "jdbc:mariadb://%s:%d/%s?useSsl=false&autoReconnect=true",
                 db.host(), db.port(), db.database()));
@@ -63,14 +64,14 @@ public final class ChatDatabase {
         }
 
         try {
-            this.muteRepository = new MuteRepository(this.dataSource, this.executor, this.logger, db.muteTable());
+            this.muteRepository = new org.ramki.advancedChat.storage.MuteRepository(this.dataSource, this.executor, this.logger, db.muteTable());
         } catch (RuntimeException ex) {
             this.dataSource.close();
             throw ex;
         }
     }
 
-    public MuteRepository getMuteRepository() {
+    public org.ramki.advancedChat.storage.MuteRepository getMuteRepository() {
         return this.muteRepository;
     }
 
