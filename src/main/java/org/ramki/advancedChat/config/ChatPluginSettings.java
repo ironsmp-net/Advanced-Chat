@@ -8,7 +8,8 @@ public record ChatPluginSettings(
         boolean chatSync,
         CooldownSection cooldown,
         DatabaseSection database,
-        MuteSection mute
+        MuteSection mute,
+        BanSection ban
 ) {
     public record CooldownSection(boolean enabled, double seconds, String message) {
         public long millis() {
@@ -25,11 +26,17 @@ public record ChatPluginSettings(
             String password,
             String table,
             String muteTable,
+            String banTable,
             long pollIntervalTicks
     ) {}
 
     public record MuteSection(
             String chatBlockedMessage,
+            long syncIntervalTicks
+    ) {}
+
+    public record BanSection(
+            String kickMessage,
             long syncIntervalTicks
     ) {}
 
@@ -50,6 +57,7 @@ public record ChatPluginSettings(
                 config.getString("database.password", ""),
                 config.getString("database.table", "advchat_messages"),
                 config.getString("database.mute-table", "advchat_mutes"),
+                config.getString("database.ban-table", "advchat_bans"),
                 config.getLong("database.poll-interval-ticks", 10L)
         );
 
@@ -59,13 +67,20 @@ public record ChatPluginSettings(
                 config.getLong("mute.sync-interval-ticks", 20L)
         );
 
+        BanSection ban = new BanSection(
+                config.getString("ban.kick-message",
+                        "<red>You are banned (%days% Days, %hours% Hours, %minutes% Minutes)!\n<red>Reason: <yellow>(%reason%)"),
+                config.getLong("ban.sync-interval-ticks", 20L)
+        );
+
         return new ChatPluginSettings(
                 config.getString("chat-format", "%player%: %message%"),
                 config.getString("server-name", "server"),
                 config.getBoolean("chat-sync", true),
                 cooldown,
                 database,
-                mute
+                mute,
+                ban
         );
     }
 }

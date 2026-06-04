@@ -1,6 +1,5 @@
 package org.ramki.advancedChat.command;
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -10,8 +9,8 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.ramki.advancedChat.AdvancedChat;
-import org.ramki.advancedChat.mute.MuteRecord;
-import org.ramki.advancedChat.service.MuteService;
+import org.ramki.advancedChat.ban.BanRecord;
+import org.ramki.advancedChat.service.BanService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,37 +19,37 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public final class MuteCommand implements TabExecutor {
+public final class BanCommand implements TabExecutor {
 
-    private static final String MUTE_PERMISSION = "advancedchat.mute";
-    private static final String UNMUTE_PERMISSION = "advancedchat.unmute";
+    private static final String BAN_PERMISSION = "advancedchat.ban";
+    private static final String UNBAN_PERMISSION = "advancedchat.unban";
 
     private final AdvancedChat plugin;
-    private final MuteService muteService;
+    private final BanService banService;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
 
-    public MuteCommand(AdvancedChat plugin, MuteService muteService) {
+    public BanCommand(AdvancedChat plugin, BanService banService) {
         this.plugin = plugin;
-        this.muteService = muteService;
+        this.banService = banService;
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
-        boolean unmute = command.getName().equalsIgnoreCase("unmute");
-        if (!sender.hasPermission(unmute ? UNMUTE_PERMISSION : MUTE_PERMISSION)) {
+        boolean unban = command.getName().equalsIgnoreCase("unban");
+        if (!sender.hasPermission(unban ? UNBAN_PERMISSION : BAN_PERMISSION)) {
             sender.sendRichMessage("<red>No permission.");
             return true;
         }
 
-        if (unmute) {
-            return handleUnmute(sender, args);
+        if (unban) {
+            return handleUnban(sender, args);
         }
-        return handleMute(sender, args);
+        return handleBan(sender, args);
     }
 
-    private boolean handleMute(CommandSender sender, String[] args) {
+    private boolean handleBan(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            sender.sendRichMessage("<red>Usage: /mute <player> <number> <minute|hour|day> <reason>");
+            sender.sendRichMessage("<red>Usage: /ban <player> <number> <minute|hour|day> <reason>");
             return true;
         }
 
@@ -99,37 +98,34 @@ public final class MuteCommand implements TabExecutor {
 
         long now = System.currentTimeMillis();
         long expiresAt = now + durationMillis;
-        MuteRecord record = new MuteRecord(targetUuid, resolvedName, expiresAt, reason, sender.getName(), now);
-        this.muteService.mute(record);
+        BanRecord record = new BanRecord(targetUuid, resolvedName, expiresAt, reason, sender.getName(), now);
+        this.banService.ban(record);
 
         long days = TimeUnit.MILLISECONDS.toDays(durationMillis);
         long hours = TimeUnit.MILLISECONDS.toHours(durationMillis) % 24L;
         long minutes = TimeUnit.MILLISECONDS.toMinutes(durationMillis) % 60L;
         if (days == 0L && hours == 0L && minutes == 0L) minutes = 1L;
 
-        sender.sendRichMessage("<green>Muted <yellow>" + resolvedName + "<green> for <yellow>"
+        sender.sendRichMessage("<green>Banned <yellow>" + resolvedName + "<green> for <yellow>"
                 + days + "d " + hours + "h " + minutes + "m<green>. Reason: <yellow>" + reason);
 
         if (onlineTarget != null && onlineTarget.isOnline()) {
-            String raw = this.plugin.getSettings().mute().chatBlockedMessage()
+            String raw = this.plugin.getSettings().ban().kickMessage()
                     .replace("%days%", String.valueOf(days))
                     .replace("%hours%", String.valueOf(hours))
                     .replace("%minutes%", String.valueOf(minutes))
                     .replace("%reason%", reason)
-                    .replace("%muter%", sender.getName())
+                    .replace("%banner%", sender.getName())
                     .replace("%player%", resolvedName);
-            if (this.plugin.isPapiEnabled()) {
-                raw = PlaceholderAPI.setPlaceholders(onlineTarget, raw);
-            }
-            onlineTarget.sendMessage(this.miniMessage.deserialize(raw));
+            onlineTarget.kick(this.miniMessage.deserialize(raw));
         }
 
         return true;
     }
 
-    private boolean handleUnmute(CommandSender sender, String[] args) {
+    private boolean handleUnban(CommandSender sender, String[] args) {
         if (args.length < 1) {
-            sender.sendRichMessage("<red>Usage: /unmute <player>");
+            sender.sendRichMessage("<red>Usage: /unban <player>");
             return true;
         }
 
@@ -147,17 +143,13 @@ public final class MuteCommand implements TabExecutor {
             targetUuid = offline.getUniqueId();
         }
 
-        if (!this.muteService.isMuted(targetUuid)) {
-            sender.sendRichMessage("<red>That player is not muted.");
+        if (!this.banService.isBanned(targetUuid)) {
+            sender.sendRichMessage("<red>That player is not banned.");
             return true;
         }
 
-        this.muteService.unmute(targetUuid);
-        sender.sendRichMessage("<green>Unmuted <yellow>" + targetName + "<green>.");
-
-        if (onlineTarget != null && onlineTarget.isOnline()) {
-            onlineTarget.sendRichMessage("<green>You have been unmuted.");
-        }
+        this.banService.unban(targetUuid);
+        sender.sendRichMessage("<green>Unbanned <yellow>" + targetName + "<green>.");
         return true;
     }
 
@@ -173,10 +165,10 @@ public final class MuteCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
-        boolean unmute = command.getName().equalsIgnoreCase("unmute");
-        if (!sender.hasPermission(unmute ? UNMUTE_PERMISSION : MUTE_PERMISSION)) return Collections.emptyList();
+        boolean unban = command.getName().equalsIgnoreCase("unban");
+        if (!sender.hasPermission(unban ? UNBAN_PERMISSION : BAN_PERMISSION)) return Collections.emptyList();
 
-        if (unmute) {
+        if (unban) {
             if (args.length == 1) return onlinePlayerSuggestions(args[0]);
             return Collections.emptyList();
         }

@@ -40,6 +40,12 @@ mute:
   chat-blocked-message: "<red>You are muted (%days% Days, %hours% Hours, %minutes% Minutes)!\n<red>Reason: <yellow>(%reason%)"
   sync-interval-ticks: 20
 
+# Shown to a banned player when they try to join (and when kicked). Placeholders:
+# %days%, %hours%, %minutes%, %reason%, %banner%, %player%
+ban:
+  kick-message: "<red>You are banned (%days% Days, %hours% Hours, %minutes% Minutes)!\n<red>Reason: <yellow>(%reason%)"
+  sync-interval-ticks: 20
+
 database:
   enabled: false
   host: "127.0.0.1"
@@ -49,4 +55,5 @@ database:
   password: ""
   table: "advchat_messages"
   mute-table: "advchat_mutes"
+  ban-table: "advchat_bans"
   poll-interval-ticks: 10

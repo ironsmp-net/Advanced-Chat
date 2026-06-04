@@ -4,13 +4,18 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.ramki.advancedChat.ban.BanRecord;
+import org.ramki.advancedChat.command.BanCommand;
 import org.ramki.advancedChat.command.MuteCommand;
 import org.ramki.advancedChat.config.ChatPluginSettings;
 import org.ramki.advancedChat.mute.MuteRecord;
+import org.ramki.advancedChat.service.BanService;
 import org.ramki.advancedChat.service.CooldownService;
 import org.ramki.advancedChat.service.MuteService;
+import org.ramki.advancedChat.storage.BanRepository;
 import org.ramki.advancedChat.storage.ChatDatabase;
 import org.ramki.advancedChat.storage.MuteRepository;
+import org.ramki.advancedChat.task.BanSyncTask;
 import org.ramki.advancedChat.task.ChatRelayTask;
 import org.ramki.advancedChat.task.MuteSyncTask;
 
@@ -32,10 +37,12 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
 
     private CooldownService cooldownService;
     private MuteService muteService;
+    private BanService banService;
     private ExecutorService executor;
     private ChatDatabase database;
     private ChatRelayTask relayTask;
     private MuteSyncTask muteSyncTask;
+    private BanSyncTask banSyncTask;
 
     @Override
     public void onEnable() {
@@ -60,8 +67,17 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
             this.muteSyncTask.start(this.settings.mute().syncIntervalTicks());
         }
 
+        BanRepository banRepository = this.database != null ? this.database.getBanRepository() : null;
+        this.banService = new BanService(banRepository);
+        if (banRepository != null) {
+            primeBanCache(banRepository);
+            this.banSyncTask = new BanSyncTask(this, banRepository, this.banService);
+            this.banSyncTask.start(this.settings.ban().syncIntervalTicks());
+        }
+
         getServer().getPluginManager().registerEvents(
                 new ChatListener(this, this.cooldownService, this.muteService, this::getDatabase), this);
+        getServer().getPluginManager().registerEvents(new BanListener(this, this.banService), this);
 
         getCommand("advchat").setExecutor(this);
         getCommand("advchat").setTabCompleter(this);
@@ -74,6 +90,16 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
         if (getCommand("unmute") != null) {
             getCommand("unmute").setExecutor(muteCommand);
             getCommand("unmute").setTabCompleter(muteCommand);
+        }
+
+        BanCommand banCommand = new BanCommand(this, this.banService);
+        if (getCommand("ban") != null) {
+            getCommand("ban").setExecutor(banCommand);
+            getCommand("ban").setTabCompleter(banCommand);
+        }
+        if (getCommand("unban") != null) {
+            getCommand("unban").setExecutor(banCommand);
+            getCommand("unban").setTabCompleter(banCommand);
         }
     }
 
@@ -89,6 +115,18 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
         }
     }
 
+    private void primeBanCache(BanRepository repository) {
+        try {
+            long now = System.currentTimeMillis();
+            List<BanRecord> initial = repository.loadAllActive(now);
+            ConcurrentHashMap<UUID, BanRecord> map = new ConcurrentHashMap<>(Math.max(16, initial.size() * 2));
+            for (BanRecord r : initial) map.put(r.uuid(), r);
+            this.banService.replaceCache(map);
+        } catch (Exception ex) {
+            getLogger().log(Level.WARNING, "Failed to prime ban cache from database", ex);
+        }
+    }
+
     @Override
     public void onDisable() {
         if (this.relayTask != null) {
@@ -99,6 +137,11 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
         if (this.muteSyncTask != null) {
             this.muteSyncTask.stop();
             this.muteSyncTask = null;
+        }
+
+        if (this.banSyncTask != null) {
+            this.banSyncTask.stop();
+            this.banSyncTask = null;
         }
 
         if (this.executor != null) {
@@ -123,6 +166,10 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
 
         if (this.muteService != null) {
             this.muteService.clear();
+        }
+
+        if (this.banService != null) {
+            this.banService.clear();
         }
 
         if (this.cooldownService != null) {
