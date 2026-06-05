@@ -14,7 +14,7 @@ dependencies {
     compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
     compileOnly 'me.clip:placeholderapi:2.11.6'
     compileOnly 'com.zaxxer:HikariCP:5.1.0'
-    implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.8'
+    compileOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.8'
 }
 
 java {
@@ -47,5 +47,4 @@ shadowJar {
     archiveBaseName = 'ironsmp-AdvancedChat'
     archiveVersion = version
     archiveClassifier = ''
-    relocate 'org.mariadb.jdbc', 'org.ramki.advancedChat.libs.mariadb'
 }

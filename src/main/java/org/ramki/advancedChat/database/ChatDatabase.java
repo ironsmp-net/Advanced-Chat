@@ -43,7 +43,7 @@ public final class ChatDatabase {
         this.table = db.table();
 
         HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setDriverClassName("org.ramki.advancedChat.libs.mariadb.Driver");
+        hikariConfig.setDriverClassName("org.mariadb.jdbc.Driver");
         hikariConfig.setJdbcUrl(String.format(
                 "jdbc:mariadb://%s:%d/%s?useSsl=false&autoReconnect=true",
                 db.host(), db.port(), db.database()));
