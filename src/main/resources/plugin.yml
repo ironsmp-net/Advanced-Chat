@@ -19,22 +19,6 @@ commands:
     description: AdvancedChat commands
     usage: /advchat <reload>
     aliases: [ advancedchat ]
-  mute:
-    description: Mute a player across the network
-    usage: /mute <player> <number> <minute|hour|day> <reason>
-    permission: advancedchat.mute
-  unmute:
-    description: Unmute a player across the network
-    usage: /unmute <player>
-    permission: advancedchat.unmute
-  ban:
-    description: Ban a player across the network
-    usage: /ban <player> <number> <minute|hour|day> <reason>
-    permission: advancedchat.ban
-  unban:
-    description: Unban a player across the network
-    usage: /unban <player>
-    permission: advancedchat.unban
 
 permissions:
   advchat.reload:
@@ -49,15 +33,3 @@ permissions:
   advchat.bypasscooldown:
     description: Allows bypassing the chat cooldown
     default: false
-  advancedchat.mute:
-    description: Allows use of /mute
-    default: op
-  advancedchat.unmute:
-    description: Allows use of /unmute
-    default: op
-  advancedchat.ban:
-    description: Allows use of /ban
-    default: op
-  advancedchat.unban:
-    description: Allows use of /unban
-    default: op

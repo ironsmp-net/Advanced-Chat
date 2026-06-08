@@ -32,8 +32,6 @@ public final class ChatDatabase {
     private final ExecutorService executor;
     private final Logger logger;
     private final String table;
-    private final org.ramki.advancedChat.storage.MuteRepository muteRepository;
-    private final org.ramki.advancedChat.storage.BanRepository banRepository;
 
     public ChatDatabase(AdvancedChat plugin, ExecutorService executor, Logger logger) {
         this.plugin = plugin;
@@ -63,22 +61,6 @@ public final class ChatDatabase {
             this.dataSource.close();
             throw new IllegalStateException("Failed to create chat sync table", ex);
         }
-
-        try {
-            this.muteRepository = new org.ramki.advancedChat.storage.MuteRepository(this.dataSource, this.executor, this.logger, db.muteTable());
-            this.banRepository = new org.ramki.advancedChat.storage.BanRepository(this.dataSource, this.executor, this.logger, db.banTable());
-        } catch (RuntimeException ex) {
-            this.dataSource.close();
-            throw ex;
-        }
-    }
-
-    public org.ramki.advancedChat.storage.MuteRepository getMuteRepository() {
-        return this.muteRepository;
-    }
-
-    public org.ramki.advancedChat.storage.BanRepository getBanRepository() {
-        return this.banRepository;
     }
 
     private void initSchema() throws SQLException {

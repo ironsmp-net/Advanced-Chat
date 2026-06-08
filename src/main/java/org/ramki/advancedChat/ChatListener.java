@@ -12,29 +12,23 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.ramki.advancedChat.config.ChatPluginSettings;
-import org.ramki.advancedChat.mute.MuteRecord;
 import org.ramki.advancedChat.service.CooldownService;
-import org.ramki.advancedChat.service.MuteService;
 import org.ramki.advancedChat.storage.ChatDatabase;
 import net.kyori.adventure.audience.Audience;
 
 import java.util.Locale;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public final class ChatListener implements Listener {
 
     private final AdvancedChat plugin;
     private final CooldownService cooldownService;
-    private final MuteService muteService;
     private final Supplier<ChatDatabase> databaseSupplier;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
 
-    public ChatListener(AdvancedChat plugin, CooldownService cooldownService, MuteService muteService, Supplier<ChatDatabase> databaseSupplier) {
+    public ChatListener(AdvancedChat plugin, CooldownService cooldownService, Supplier<ChatDatabase> databaseSupplier) {
         this.plugin = plugin;
         this.cooldownService = cooldownService;
-        this.muteService = muteService;
         this.databaseSupplier = databaseSupplier;
     }
 
@@ -42,30 +36,6 @@ public final class ChatListener implements Listener {
     public void onChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
         ChatPluginSettings settings = this.plugin.getSettings();
-
-        Optional<MuteRecord> muteOpt = this.muteService.getActive(player.getUniqueId());
-        if (muteOpt.isPresent()) {
-            event.setCancelled(true);
-            MuteRecord mute = muteOpt.get();
-            long remaining = mute.remainingMillis(System.currentTimeMillis());
-            long days = TimeUnit.MILLISECONDS.toDays(remaining);
-            long hours = TimeUnit.MILLISECONDS.toHours(remaining) % 24L;
-            long minutes = TimeUnit.MILLISECONDS.toMinutes(remaining) % 60L;
-            if (days == 0L && hours == 0L && minutes == 0L && remaining > 0L) minutes = 1L;
-
-            String raw = settings.mute().chatBlockedMessage()
-                    .replace("%days%", String.valueOf(days))
-                    .replace("%hours%", String.valueOf(hours))
-                    .replace("%minutes%", String.valueOf(minutes))
-                    .replace("%reason%", mute.reason())
-                    .replace("%muter%", mute.muterName())
-                    .replace("%player%", player.getName());
-            if (this.plugin.isPapiEnabled()) {
-                raw = PlaceholderAPI.setPlaceholders(player, raw);
-            }
-            player.sendMessage(this.miniMessage.deserialize(raw));
-            return;
-        }
 
         if (settings.cooldown().enabled() && !player.hasPermission("advchat.bypasscooldown")) {
             long remaining = this.cooldownService.remainingMillis(player.getUniqueId());
