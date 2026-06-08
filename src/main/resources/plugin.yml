@@ -16,9 +16,12 @@ libraries:
 
 commands:
   advchat:
-    description: AdvancedChat commands
     usage: /advchat <reload>
     aliases: [ advancedchat ]
+  message:
+    aliases: [ msg, dm ]
+  reply:
+    aliases: [ r ]
 
 permissions:
   advchat.reload:
