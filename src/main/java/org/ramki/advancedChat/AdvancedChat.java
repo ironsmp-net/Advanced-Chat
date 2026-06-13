@@ -74,10 +74,16 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
          */
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             commands.registrar().register(
-                Commands.literal("message")
+                Commands.literal("msg")
                         .then(Commands.argument("player", StringArgumentType.word())
                                 .suggests((ctx, builder) ->{
-                                    Bukkit.getOnlinePlayers().forEach(p -> builder.suggest(p.getName()));
+                                    if (builder.getRemaining().length() >= 3){
+                                        Bukkit.getOnlinePlayers().forEach(p -> {
+                                            if (p.getName().toLowerCase().startsWith(builder.getRemaining().toLowerCase())){
+                                                builder.suggest(p.getName());
+                                            }
+                                        });
+                                    }
                                     return builder.buildFuture();
                                 })
                             .then(Commands.argument("message", StringArgumentType.greedyString())
@@ -96,8 +102,8 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
                                             player.sendMessage(ChatColor.RED + "You cannot message yourself!");
                                             return 1;
                                         }
-                                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7You -> " + target.getName() + "&f" + message));
-                                        target.sendMessage(ChatColor.translateAlternateColorCodes('&', "&e" + player.getName() + ": &f" + message));
+                                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7You &f→ " + ChatColor.AQUA + target.getName() + "&7: &f" + message));
+                                        target.sendMessage(ChatColor.translateAlternateColorCodes('&', "&b" + player.getName() + " &f→ &7You: " + "&f" + message));
                                         this.getRecentMessages().put(target.getUniqueId(), player.getUniqueId());
                                     }
                                     return 1;
@@ -105,16 +111,16 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
                             )
                         )
                         .build(),
-                    List.of("msg", "dm")
+                    List.of("message")
             );
         });
 
         /*
-        this is the reply, r command
+        fuck niggers
          */
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands ->{
             commands.registrar().register(
-                    Commands.literal("reply")
+                    Commands.literal("r")
                             .then(Commands.argument("message", StringArgumentType.greedyString())
                                     .executes(ctx -> {
                                         String message = StringArgumentType.getString(ctx, "message");
@@ -125,8 +131,8 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
                                                 UUID uuid = this.getRecentMessages().get(player.getUniqueId());
                                                 if (Bukkit.getPlayer(uuid) != null){
                                                     Player target = Bukkit.getPlayer(uuid);
-                                                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7You > " + target.getName() + "&f" + message));
-                                                    target.sendMessage(ChatColor.translateAlternateColorCodes('&', "&e" + player.getName() + ": &f" + message));
+                                                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7You &f→ " + ChatColor.AQUA + target.getName() + "&7: &f" + message));
+                                                    target.sendMessage(ChatColor.translateAlternateColorCodes('&', "&b" + player.getName() + " &f→ &7You: " + "&f" + message));
                                                     return 1;
                                                 } else {
                                                     player.sendMessage(ChatColor.RED + "This player is offline!");
@@ -141,7 +147,7 @@ public final class AdvancedChat extends JavaPlugin implements TabExecutor {
                                     })
                             )
                             .build(),
-                    List.of("r"));
+                    List.of("reply"));
         });
     }
 

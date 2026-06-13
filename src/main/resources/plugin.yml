@@ -18,10 +18,10 @@ commands:
   advchat:
     usage: /advchat <reload>
     aliases: [ advancedchat ]
-  message:
-    aliases: [ msg, dm ]
-  reply:
-    aliases: [ r ]
+  msg:
+    aliases: [ message, dm ]
+  r:
+    aliases: [ reply ]
 
 permissions:
   advchat.reload:
